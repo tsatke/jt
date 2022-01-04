@@ -60,5 +60,5 @@ jobs:
       - name: Archive artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: dist
-          path: ./jt-${{ matrix.os }}
+          name: dist-${{ matrix.os }}
+          path: ./jt
