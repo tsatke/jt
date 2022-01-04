@@ -2,6 +2,7 @@ package classpath
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -51,7 +52,7 @@ func NewClasspath() *Classpath {
 }
 
 func Parse(cp string) (*Classpath, error) {
-	entries := strings.Split(cp, ":")
+	entries := filepath.SplitList(cp)
 	result := NewClasspath()
 	for _, entry := range entries {
 		typ := EntryTypeJar
