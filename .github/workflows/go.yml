@@ -55,7 +55,7 @@ jobs:
 
       - name: Build
         run: |
-          go build -o jt-${{ matrix.os }} ./cmd/jt
+          go build -o jt ./cmd/jt
 
       - name: Archive artifacts
         uses: actions/upload-artifact@v2
