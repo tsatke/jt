@@ -1,6 +1,6 @@
 <p align="center">
     <img src="./.github/logo.png" width="100" alt="logo"/>
-    <h1 align="center">Lua</h1>
+    <h1 align="center">JT</h1>
     <p align="center">a java tool for the command line</p>
     <p align="center">
         <a href="https://github.com/tsatke/jt/actions/workflows/go.yml"><img src="https://github.com/tsatke/jt/actions/workflows/go.yml/badge.svg"></a>
