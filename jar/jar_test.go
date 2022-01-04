@@ -1,4 +1,4 @@
-package jt
+package jar
 
 import (
 	"path/filepath"
@@ -16,7 +16,7 @@ type JarSuite struct {
 }
 
 func (suite *JarSuite) TestOpenClass() {
-	jar, err := OpenJarFile(filepath.Join("testdata", "jars", "test1.jar"))
+	jar, err := Open(filepath.Join("testdata", "jars", "test1.jar"))
 	suite.NoError(err)
 
 	class, err := jar.OpenClass("com/github/tsatke/jt/App")
@@ -31,7 +31,7 @@ func (suite *JarSuite) TestOpenClass() {
 }
 
 func (suite *JarSuite) TestListClasses() {
-	jar, err := OpenJarFile(filepath.Join("testdata", "jars", "test1.jar"))
+	jar, err := Open(filepath.Join("testdata", "jars", "test1.jar"))
 	suite.NoError(err)
 
 	suite.ElementsMatch([]string{"com/github/tsatke/jt/App"}, jar.ListClasses())

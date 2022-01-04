@@ -1,14 +1,19 @@
 package jt
 
+import (
+	"github.com/tsatke/jt/classpath"
+	"github.com/tsatke/jt/maven"
+)
+
 type Project interface {
 	Name() string
-	Classpath() (*Classpath, error)
+	Classpath() (*classpath.Classpath, error)
 }
 
 func LoadProject(path string) (Project, error) {
 	switch {
-	case isMavenProject(path):
-		return loadMavenProject(path)
+	case maven.IsMavenProject(path):
+		return maven.LoadProject(path)
 	}
 	return nil, ErrUnknownProjectKind
 }

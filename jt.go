@@ -1,15 +1,5 @@
 package jt
 
-import "github.com/rs/zerolog"
-
-var (
-	log = zerolog.Nop()
-)
-
-func SetLogger(newLogger zerolog.Logger) {
-	log = newLogger
-}
-
 type Error string
 
 func (e Error) Error() string {

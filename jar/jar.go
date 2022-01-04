@@ -1,4 +1,4 @@
-package jt
+package jar
 
 import (
 	"archive/zip"
@@ -7,11 +7,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/tsatke/jt/class"
 )
 
-var _ io.Closer = (*JarFile)(nil)
+var _ io.Closer = (*File)(nil)
 
-type JarFile struct {
+type File struct {
 	archive *zip.Reader
 	io.Closer
 }
@@ -21,7 +23,7 @@ type readerAtCloser interface {
 	io.Closer
 }
 
-func OpenJarFile(name string) (*JarFile, error) {
+func Open(name string) (*File, error) {
 	f, err := os.Open(name)
 	if err != nil {
 		return nil, fmt.Errorf("open: %w", err)
@@ -30,27 +32,27 @@ func OpenJarFile(name string) (*JarFile, error) {
 	if err != nil {
 		return nil, fmt.Errorf("stat: %w", err)
 	}
-	return NewJarFile(f, stat.Size())
+	return New(f, stat.Size())
 }
 
-func NewJarFile(rd readerAtCloser, size int64) (*JarFile, error) {
+func New(rd readerAtCloser, size int64) (*File, error) {
 	archive, err := zip.NewReader(rd, size)
 	if err != nil {
 		return nil, fmt.Errorf("open zip: %w", err)
 	}
 
-	return &JarFile{
+	return &File{
 		archive: archive,
 		Closer:  rd,
 	}, nil
 }
 
-func (f *JarFile) OpenClass(name string) (*Class, error) {
+func (f *File) OpenClass(name string) (*class.Class, error) {
 	classFile, err := f.archive.Open(name + ".class")
 	if err != nil {
 		return nil, fmt.Errorf("open: %w", err)
 	}
-	class, err := ParseClass(classFile)
+	class, err := class.ParseClass(classFile)
 	if err != nil {
 		return nil, fmt.Errorf("parse class: %w", err)
 	}
@@ -58,7 +60,7 @@ func (f *JarFile) OpenClass(name string) (*Class, error) {
 	return class, nil
 }
 
-func (f *JarFile) ListClasses() []string {
+func (f *File) ListClasses() []string {
 	res := make([]string, 0)
 
 	for _, file := range f.archive.File {

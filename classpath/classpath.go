@@ -1,9 +1,11 @@
-package jt
+package classpath
 
 import (
 	"fmt"
 	"strings"
-	"time"
+
+	"github.com/tsatke/jt/class"
+	"github.com/tsatke/jt/jar"
 )
 
 type Classpath struct {
@@ -44,8 +46,6 @@ func NewClasspath() *Classpath {
 }
 
 func ParseClasspath(cp string) (*Classpath, error) {
-	start := time.Now()
-
 	entries := strings.Split(cp, ":")
 	result := NewClasspath()
 	for _, entry := range entries {
@@ -59,14 +59,10 @@ func ParseClasspath(cp string) (*Classpath, error) {
 		})
 	}
 
-	log.Debug().
-		Stringer("took", time.Since(start)).
-		Msg("parse classpath")
-
 	return result, nil
 }
 
-func (cp *Classpath) OpenClass(name string) (*Class, error) {
+func (cp *Classpath) OpenClass(name string) (*class.Class, error) {
 	entry := cp.classesWithLocation[name]
 	if entry == nil {
 		// no cache hit, find an entry that contains this class
@@ -86,7 +82,7 @@ func (cp *Classpath) OpenClass(name string) (*Class, error) {
 		return nil, nil
 	}
 
-	jar, err := OpenJarFile(entry.Path)
+	jar, err := jar.Open(entry.Path)
 	if err != nil {
 		return nil, fmt.Errorf("open jar file: %w", err)
 	}
@@ -100,7 +96,7 @@ func (cp *Classpath) OpenClass(name string) (*Class, error) {
 }
 
 func (cp *Classpath) loadEntryIntoCache(entry *Entry) error {
-	jar, err := OpenJarFile(entry.Path)
+	jar, err := jar.Open(entry.Path)
 	if err != nil {
 		return fmt.Errorf("open jar file: %w", err)
 	}

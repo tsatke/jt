@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/tsatke/jt"
 )
@@ -65,14 +66,6 @@ var (
 	flagFindNoClasspath bool
 )
 
-var (
-	log = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).
-		With().
-		Timestamp().
-		Logger().
-		Level(zerolog.ErrorLevel)
-)
-
 func init() {
 	root.AddCommand(superclass, subclass, find, classpath, classes)
 
@@ -85,10 +78,15 @@ func main() {
 		_ = command.ParseFlags(os.Args)
 	}
 
+	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).
+		With().
+		Timestamp().
+		Logger().
+		Level(zerolog.ErrorLevel)
+
 	if verbose {
-		log = log.Level(zerolog.TraceLevel)
+		log.Logger = log.Logger.Level(zerolog.TraceLevel)
 	}
-	jt.SetLogger(log)
 
 	ctx := context.Background()
 	if err := root.ExecuteContext(ctx); err != nil {

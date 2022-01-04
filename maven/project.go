@@ -1,4 +1,4 @@
-package jt
+package maven
 
 import (
 	"bytes"
@@ -9,31 +9,31 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/afero"
+	"github.com/tsatke/jt/classpath"
 	"github.com/vifraa/gopom"
 )
 
-func isMavenProject(path string) bool {
+func IsMavenProject(path string) bool {
 	fs := afero.NewBasePathFs(afero.NewOsFs(), path)
-	return isMavenProjectFs(fs)
+	return IsMavenProjectFs(fs)
 }
 
-func isMavenProjectFs(fs afero.Fs) bool {
+func IsMavenProjectFs(fs afero.Fs) bool {
 	exists, err := afero.Exists(fs, "pom.xml")
 	return err == nil && exists
 }
-
-var _ Project = (*mavenProject)(nil)
 
 type mavenProject struct {
 	name string
 	path string
 
 	pom       *gopom.Project
-	classpath *Classpath // nil until computed
+	classpath *classpath.Classpath // nil until computed
 }
 
-func loadMavenProject(path string) (*mavenProject, error) {
+func LoadProject(path string) (*mavenProject, error) {
 	start := time.Now()
 
 	pom, err := gopom.Parse(filepath.Join(path, "pom.xml"))
@@ -56,7 +56,7 @@ func (p *mavenProject) Name() string {
 	return p.name
 }
 
-func (p *mavenProject) Classpath() (*Classpath, error) {
+func (p *mavenProject) Classpath() (*classpath.Classpath, error) {
 	if p.classpath == nil {
 		cp, err := p.buildClasspath()
 		if err != nil {
@@ -67,7 +67,7 @@ func (p *mavenProject) Classpath() (*Classpath, error) {
 	return p.classpath, nil
 }
 
-func (p *mavenProject) buildClasspath() (*Classpath, error) {
+func (p *mavenProject) buildClasspath() (*classpath.Classpath, error) {
 	start := time.Now()
 
 	file, err := os.CreateTemp("", "output.*")
@@ -101,7 +101,7 @@ func (p *mavenProject) buildClasspath() (*Classpath, error) {
 		Stringer("took", time.Since(start)).
 		Msg("build classpath")
 
-	cp, err := ParseClasspath(buf.String())
+	cp, err := classpath.ParseClasspath(buf.String())
 	if err != nil {
 		return nil, fmt.Errorf("parse classpath: %w", err)
 	}
@@ -122,11 +122,11 @@ func (p *mavenProject) buildClasspath() (*Classpath, error) {
 				return nil
 			}
 
-			entry := &Entry{
-				Type: EntryTypeJar,
+			entry := &classpath.Entry{
+				Type: classpath.EntryTypeJar,
 				Path: filepath.Join(javaHome, path),
 			}
-			cp.Entries = append([]*Entry{entry}, cp.Entries...)
+			cp.Entries = append([]*classpath.Entry{entry}, cp.Entries...)
 			return nil
 		}); err != nil {
 			_, _ = fmt.Fprintln(os.Stderr, err)
@@ -143,8 +143,8 @@ func (p *mavenProject) buildClasspath() (*Classpath, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to make source directory path absolute: %w", err)
 	}
-	sourceFolder := &Entry{Type: EntryTypeSource, Path: absoluteSourceDirectoryPath}
-	cp.Entries = append([]*Entry{sourceFolder}, cp.Entries...)
+	sourceFolder := &classpath.Entry{Type: classpath.EntryTypeSource, Path: absoluteSourceDirectoryPath}
+	cp.Entries = append([]*classpath.Entry{sourceFolder}, cp.Entries...)
 
 	return cp, nil
 }

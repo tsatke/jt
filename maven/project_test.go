@@ -1,4 +1,4 @@
-package jt
+package maven
 
 import (
 	"path/filepath"
@@ -22,24 +22,24 @@ func (suite *MavenProjectSuite) TestIsMavenProject() {
 	suite.NoError(err)
 	suite.NoError(f.Close())
 
-	suite.True(isMavenProjectFs(fs))
-	suite.False(isMavenProjectFs(afero.NewMemMapFs()))
+	suite.True(IsMavenProjectFs(fs))
+	suite.False(IsMavenProjectFs(afero.NewMemMapFs()))
 }
 
 func (suite *MavenProjectSuite) TestIsMavenProjectTest1() {
-	suite.True(isMavenProject(filepath.Join("testdata", "projects", "maven", "test1")))
+	suite.True(IsMavenProject(filepath.Join("testdata", "projects", "maven", "test1")))
 }
 
 func (suite *MavenProjectSuite) TestLoadMavenProject() {
 	path := filepath.Join("testdata", "projects", "maven", "test1")
-	project, err := loadMavenProject(path)
+	project, err := LoadProject(path)
 	suite.NoError(err)
 	suite.Equal("test1", project.Name())
 }
 
 func (suite *MavenProjectSuite) TestClasspath() {
 	path := filepath.Join("testdata", "projects", "maven", "test1")
-	project, err := loadMavenProject(path)
+	project, err := LoadProject(path)
 	suite.NoError(err)
 
 	cp, err := project.Classpath()

@@ -7,8 +7,11 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/tsatke/jt"
+	classpath2 "github.com/tsatke/jt/classpath"
+	"github.com/tsatke/jt/jar"
 )
 
 func runFind(cmd *cobra.Command, args []string) {
@@ -39,10 +42,10 @@ func runFind(cmd *cobra.Command, args []string) {
 		}
 
 		for _, entry := range cp.Entries {
-			if entry.Type != jt.EntryTypeJar {
+			if entry.Type != classpath2.EntryTypeJar {
 				continue
 			}
-			jar, err := jt.OpenJarFile(entry.Path)
+			jar, err := jar.Open(entry.Path)
 			if err != nil {
 				_, _ = fmt.Fprintln(os.Stderr, err)
 				continue

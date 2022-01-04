@@ -1,4 +1,4 @@
-package jt
+package class
 
 import (
 	"os"
