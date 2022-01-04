@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/mattn/go-isatty"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/tsatke/jt"
@@ -92,7 +93,10 @@ func runFind(cmd *cobra.Command, args []string) {
 		defer wg.Done()
 
 		printWithHeader := func(header string, data <-chan string) {
-			fmt.Println(header)
+			// only print headers in terminals
+			if isatty.IsTerminal(os.Stdout.Fd()) {
+				fmt.Println(header)
+			}
 			for {
 				res := <-data
 				if res == "" {

@@ -10,33 +10,34 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/afero"
 	"github.com/tsatke/jt/classpath"
 	"github.com/vifraa/gopom"
 )
 
+const (
+	PomFileName = "pom.xml"
+)
+
 func IsMavenProject(path string) bool {
-	fs := afero.NewBasePathFs(afero.NewOsFs(), path)
-	return IsMavenProjectFs(fs)
+	return IsMavenProjectFs(os.DirFS(path))
 }
 
-func IsMavenProjectFs(fs afero.Fs) bool {
-	exists, err := afero.Exists(fs, "pom.xml")
-	return err == nil && exists
+func IsMavenProjectFs(fsys fs.FS) bool {
+	pomInfo, err := fs.Stat(fsys, PomFileName)
+	return err == nil && pomInfo != nil && !pomInfo.IsDir()
 }
 
-type mavenProject struct {
-	name string
+type project struct {
 	path string
 
 	pom       *gopom.Project
 	classpath *classpath.Classpath // nil until computed
 }
 
-func LoadProject(path string) (*mavenProject, error) {
+func LoadProject(path string) (*project, error) {
 	start := time.Now()
 
-	pom, err := gopom.Parse(filepath.Join(path, "pom.xml"))
+	pom, err := gopom.Parse(filepath.Join(path, PomFileName))
 	if err != nil {
 		return nil, fmt.Errorf("parse pom: %w", err)
 	}
@@ -45,18 +46,17 @@ func LoadProject(path string) (*mavenProject, error) {
 		Stringer("took", time.Since(start)).
 		Msg("parse pom")
 
-	return &mavenProject{
-		name: pom.Name,
+	return &project{
 		path: path,
 		pom:  pom,
 	}, nil
 }
 
-func (p *mavenProject) Name() string {
-	return p.name
+func (p *project) Name() string {
+	return p.pom.Name
 }
 
-func (p *mavenProject) Classpath() (*classpath.Classpath, error) {
+func (p *project) Classpath() (*classpath.Classpath, error) {
 	if p.classpath == nil {
 		cp, err := p.buildClasspath()
 		if err != nil {
@@ -67,7 +67,7 @@ func (p *mavenProject) Classpath() (*classpath.Classpath, error) {
 	return p.classpath, nil
 }
 
-func (p *mavenProject) buildClasspath() (*classpath.Classpath, error) {
+func (p *project) buildClasspath() (*classpath.Classpath, error) {
 	start := time.Now()
 
 	file, err := os.CreateTemp("", "output.*")
@@ -76,10 +76,11 @@ func (p *mavenProject) buildClasspath() (*classpath.Classpath, error) {
 	}
 	defer func() { _ = file.Close() }()
 
+	// TODO: it seems like maven has some kind of caching mechanism, and if regenerateFile is not true, it will not write output if the project hasn't changed
 	buildCp := exec.Command("mvn", "dependency:build-classpath",
 		"-B",
 		"-q",
-		"-f", filepath.Join(p.path, "pom.xml"),
+		"-f", filepath.Join(p.path, PomFileName),
 		"-Dmdep.outputFile="+file.Name(),
 		"-Dmdep.regenerateFile=true",
 	)
@@ -101,7 +102,7 @@ func (p *mavenProject) buildClasspath() (*classpath.Classpath, error) {
 		Stringer("took", time.Since(start)).
 		Msg("build classpath")
 
-	cp, err := classpath.ParseClasspath(buf.String())
+	cp, err := classpath.Parse(buf.String())
 	if err != nil {
 		return nil, fmt.Errorf("parse classpath: %w", err)
 	}

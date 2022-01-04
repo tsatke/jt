@@ -38,9 +38,13 @@ in the current directory. The subclasses are printed with the fully qualified na
 		Use:     "find",
 		Aliases: []string{"fd"},
 		Short:   "Find the location of classes that match",
-		Long:    `Prints a list of all classes matching the argument. The list contains possible locations of the class.`,
-		Run:     runFind,
-		Args:    cobra.ExactArgs(1),
+		Long: `Prints a list of all classes matching the argument. The list contains possible locations of the class.
+
+If run in a terminal, this command will print headers to differentiate between matches in the project
+and matches on the classpath.
+If not run in a terminal (for example if the output is piped), then NO headers will be printed.`,
+		Run:  runFind,
+		Args: cobra.ExactArgs(1),
 	}
 
 	classpath = &cobra.Command{

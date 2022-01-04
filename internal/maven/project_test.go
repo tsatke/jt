@@ -22,8 +22,10 @@ func (suite *MavenProjectSuite) TestIsMavenProject() {
 	suite.NoError(err)
 	suite.NoError(f.Close())
 
-	suite.True(IsMavenProjectFs(fs))
-	suite.False(IsMavenProjectFs(afero.NewMemMapFs()))
+	iofs := afero.NewIOFS(fs)
+
+	suite.True(IsMavenProjectFs(iofs))
+	suite.False(IsMavenProjectFs(afero.NewIOFS(afero.NewMemMapFs())))
 }
 
 func (suite *MavenProjectSuite) TestIsMavenProjectTest1() {
