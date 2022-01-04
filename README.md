@@ -1,4 +1,13 @@
-# jt
+<p align="center">
+    <img src="./.github/logo.png" width="100" alt="logo"/>
+    <h1 align="center">Lua</h1>
+    <p align="center">a java tool for the command line</p>
+    <p align="center">
+        <a href="https://github.com/tsatke/jt/actions/workflows/go.yml"><img src="https://github.com/tsatke/jt/actions/workflows/go.yml/badge.svg"></a>
+    </p>
+</p>
+
+---
 
 `jt` is a java tool for the command line.
 It is meant to be the JDT in the terminal (I know that it still has to go a long way).
@@ -91,3 +100,5 @@ java/lang/Object
 
 ### Viewing subclasses
 not implemented yet
+
+<div>Icons made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
