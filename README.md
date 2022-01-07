@@ -33,7 +33,7 @@ If you want more output (or think something might be wrong), you can check the d
 
 Assuming you have a jar file with 5 classes in it (no matter where exactly, just inside the jar file), the following works.
 ```bash
-$ jt classes myjar.jar
+$ jt classes 'myjar.jar'
 com/mypackage/Class1
 com/mypackage/Class2
 com/mypackage/Class3
@@ -67,7 +67,7 @@ $ jt classpath
 
 You can use `jt` to find classes on the classpath of the project that you are currently in.
 ```bash
-$ jt find App
+$ jt find 'App'
 Project results:
 com/mypackage/App
 com/mypackage/App$Builder
@@ -76,7 +76,7 @@ com/thirdparty/AppConfiguration
 ```
 but
 ```bash
-$ jt find App | cat
+$ jt find 'App' | cat
 com/mypackage/App
 com/mypackage/App$Builder
 com/thirdparty/AppConfiguration
@@ -91,7 +91,7 @@ This will keep `jt` from even building a classpath, and save you a lot of time, 
 You can view the superclasses of a given class on the classpath.
 Interfaces are not implemented yet.
 ```bash
-$ jt superclass com/mypackage/io/SpecialInputStream
+$ jt superclass 'com/mypackage/io/SpecialInputStream'
 com/mypackage/io/SpecialInputStream
 com/mypackage/io/AbstractInputStream
 java/io/InputStream
@@ -99,6 +99,25 @@ java/lang/Object
 ```
 
 ### Viewing subclasses
-not implemented yet
+
+You can view the direct subclasses of a given class on the classpath.
+The results can be filtered by a regex pattern, which will speed up searches by a lot depending on the regex pattern.
+```bash
+$ jt subclass 'java/lang/Object'
+... (all classes from the stdlib that extend java.lang.Object)
+com/mypackage/App
+com/mypackage/App$Builder
+```
+With a filter, the search effectively skips all the standard library classes, and the search will complete a lot faster.
+```bash
+$ jt subclass 'java/lang/Object' 'com/mypackage/.*'
+com/mypackage/App
+com/mypackage/App$Builder
+```
+
+With the `--invert` option, you can also invert the pattern, meaning that all classes that **DO NOT** match the pattern are checked.
+
+The search is performed on multiple goroutines concurrently.
+The number of goroutines used is equal to `runtime.NumCPU()`.
 
 <div>Icons made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>

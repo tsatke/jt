@@ -3,7 +3,9 @@ package classpath
 import (
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -103,7 +105,7 @@ func (cp *Classpath) OpenClass(name string) (*class.Class, error) {
 		return nil, nil
 	}
 
-	log.Debug().
+	log.Trace().
 		Str("entry", entry.Path).
 		Str("search", name).
 		Msg("found match")
@@ -119,6 +121,78 @@ func (cp *Classpath) OpenClass(name string) (*class.Class, error) {
 		return nil, fmt.Errorf("open class: %w", err)
 	}
 	return class, nil
+}
+
+func (cp *Classpath) FindClasses(matchFn func(string) bool, resultsCh chan<- string) {
+	start := time.Now()
+
+	// first, load all entries into the cache
+	for _, e := range cp.Entries {
+
+		// only search entries that are not loaded into the cache yet
+		if _, ok := cp.cachedEntries[e.Path]; ok {
+			continue
+		}
+
+		if e.Type != EntryTypeJar {
+			continue // FIXME: search in the source directory
+		}
+		if err := cp.loadEntryIntoCache(e); err != nil {
+			close(resultsCh)
+			return
+		}
+	}
+
+	log.Debug().
+		Stringer("took", time.Since(start)).
+		Int("classes", len(cp.classesWithLocation)).
+		Msg("load classpath")
+
+	start = time.Now()
+
+	// then, search for the class that matches
+	sourceCh := make(chan string, 50)
+	go func() {
+		for classname, _ := range cp.classesWithLocation {
+			sourceCh <- classname
+		}
+		close(sourceCh)
+	}()
+
+	routines := runtime.NumCPU()
+	if routines < 1 {
+		routines = 1
+	}
+
+	log.Debug().
+		Int("routines", routines).
+		Msg("searching concurrently")
+
+	wg := &sync.WaitGroup{}
+	for i := 0; i < routines; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			for {
+				in, ok := <-sourceCh
+				if !ok {
+					break
+				}
+				if matchFn(in) {
+					resultsCh <- in
+				}
+			}
+		}()
+	}
+	wg.Wait()
+
+	log.Debug().
+		Stringer("took", time.Since(start)).
+		Int("classes", len(cp.classesWithLocation)).
+		Msg("find class")
+
+	close(resultsCh)
 }
 
 func (cp *Classpath) loadEntryIntoCache(entry *Entry) error {
@@ -137,16 +211,18 @@ func (cp *Classpath) loadEntryIntoCache(entry *Entry) error {
 			cp.classesWithLocation[className] = entry
 			classes++
 		} else {
-			log.Warn().
-				Str("class", className).
-				Str("original", cp.classesWithLocation[className].Path).
-				Str("duplicate", entry.Path).
-				Msg("found in two entries, discarded duplicate")
+			if log.Trace().Enabled() {
+				log.Warn().
+					Str("class", className).
+					Str("original", cp.classesWithLocation[className].Path).
+					Str("duplicate", entry.Path).
+					Msg("found in two entries, discarded duplicate")
+			}
 		}
 	}
 	cp.cachedEntries[entry.Path] = struct{}{}
 
-	log.Debug().
+	log.Trace().
 		Stringer("took", time.Since(start)).
 		Str("entry", entry.Path).
 		Int("classes", classes).

@@ -19,11 +19,18 @@ var (
 	subclass = &cobra.Command{
 		Use:     "subclass",
 		Aliases: []string{"sub"},
-		Short:   "Print subclasses of a given class",
+		Example: `Find all subclasses (slow)
+jt subclass com/package/MyClass
+
+Find all subclasses with regex (faster)
+jt subclass com/package/MyClass com/package
+jt subclass com/package/MyClass ^com/package
+jt subclass com/package/MyClass 'com/package/.*'`,
+		Short: "Print subclasses of a given class that match an optional filter",
 		Long: `Print a list of all subclasses of the given class. The considered classpath is the one of the project
 in the current directory. The subclasses are printed with the fully qualified name and the location.`,
 		Run:  runSubclass,
-		Args: cobra.ExactArgs(1),
+		Args: cobra.RangeArgs(1, 2),
 	}
 
 	superclass = &cobra.Command{
@@ -66,15 +73,20 @@ If not run in a terminal (for example if the output is piped), then NO headers w
 // command line flags
 var (
 	verbose bool
+	trace   bool
 
 	flagFindNoClasspath bool
+	flagSubclassInvert  bool
 )
 
 func init() {
 	root.AddCommand(superclass, subclass, find, classpath, classes)
 
 	root.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "print debug output")
+	root.PersistentFlags().BoolVar(&trace, "trace", false, "print more debug output")
+	_ = root.PersistentFlags().MarkHidden("trace")
 	find.PersistentFlags().BoolVar(&flagFindNoClasspath, "no-classpath", false, "disable searching on the whole classpath and only search in the project")
+	subclass.PersistentFlags().BoolVar(&flagSubclassInvert, "invert", false, "invert the matching, considering all classes that don't match the pattern")
 }
 
 func main() {
@@ -89,6 +101,9 @@ func main() {
 		Level(zerolog.ErrorLevel)
 
 	if verbose {
+		log.Logger = log.Logger.Level(zerolog.DebugLevel)
+	}
+	if trace {
 		log.Logger = log.Logger.Level(zerolog.TraceLevel)
 	}
 
