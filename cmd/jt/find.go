@@ -54,7 +54,7 @@ func runFind(cmd *cobra.Command, args []string) {
 
 			for _, path := range jar.ListClasses() {
 				if jt.ClassNameMatches(path, searchClass) {
-					result <- path
+					result <- fmt.Sprintf("%s (via %s)", path, entry.Path)
 				}
 			}
 
