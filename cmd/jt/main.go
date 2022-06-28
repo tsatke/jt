@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pkg/profile"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -74,6 +75,7 @@ If not run in a terminal (for example if the output is piped), then NO headers w
 var (
 	verbose bool
 	trace   bool
+	prof    bool
 
 	flagFindNoClasspath bool
 	flagSubclassInvert  bool
@@ -83,9 +85,12 @@ func init() {
 	root.AddCommand(superclass, subclass, find, classpath, classes)
 
 	root.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "print debug output")
+	root.PersistentFlags().BoolVar(&prof, "prof", false, "create a cpu profile of the run")
 	root.PersistentFlags().BoolVar(&trace, "trace", false, "print more debug output")
 	_ = root.PersistentFlags().MarkHidden("trace")
+
 	find.PersistentFlags().BoolVar(&flagFindNoClasspath, "no-classpath", false, "disable searching on the whole classpath and only search in the project")
+
 	subclass.PersistentFlags().BoolVar(&flagSubclassInvert, "invert", false, "invert the matching, considering all classes that don't match the pattern")
 }
 
@@ -105,6 +110,10 @@ func main() {
 	}
 	if trace {
 		log.Logger = log.Logger.Level(zerolog.TraceLevel)
+	}
+
+	if prof {
+		defer profile.Start().Stop()
 	}
 
 	ctx := context.Background()

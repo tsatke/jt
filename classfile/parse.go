@@ -9,8 +9,7 @@ import (
 
 func Parse(rd io.Reader) (cf *Classfile, err error) {
 	defer func() {
-		recv := recover()
-		if recv != nil {
+		if recv := recover(); recv != nil {
 			if pe, ok := recv.(error); ok {
 				err = pe
 			} else {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"github.com/tsatke/jt/jar"
 )
 
 func runSubclass(cmd *cobra.Command, args []string) {
@@ -26,6 +27,14 @@ func runSubclass(cmd *cobra.Command, args []string) {
 
 	pattern := regexp.MustCompile(regex)
 
+	jarCache, err := jar.NewCache(100)
+	if err != nil {
+		log.Fatal().
+			Err(err).
+			Str("project", project.Name()).
+			Msg("create jar cache")
+	}
+
 	resultsCh := make(chan string, 5)
 	go classpath.FindClasses(func(s string) bool {
 		condition := regex != "" && !pattern.MatchString(s)
@@ -36,7 +45,7 @@ func runSubclass(cmd *cobra.Command, args []string) {
 			return false
 		}
 
-		c, err := classpath.OpenClass(s)
+		c, err := classpath.OpenClassWithCache(s, jarCache)
 		if err != nil {
 			return false
 		}
@@ -46,4 +55,5 @@ func runSubclass(cmd *cobra.Command, args []string) {
 	for ch := range resultsCh {
 		fmt.Println(ch)
 	}
+	_ = jarCache.Close()
 }

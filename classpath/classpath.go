@@ -75,6 +75,10 @@ func (cp *Classpath) AddEntry(typ EntryType, path string) {
 }
 
 func (cp *Classpath) OpenClass(name string) (*class.Class, error) {
+	return cp.OpenClassWithCache(name, nil)
+}
+
+func (cp *Classpath) OpenClassWithCache(name string, cache *jar.Cache) (*class.Class, error) {
 	entry := cp.classesWithLocation[name]
 	if entry == nil {
 		// no cache hit, find an entry that contains this class
@@ -97,9 +101,9 @@ func (cp *Classpath) OpenClass(name string) (*class.Class, error) {
 				break
 			}
 		}
+		entry = cp.classesWithLocation[name]
 	}
 
-	entry = cp.classesWithLocation[name]
 	if entry == nil {
 		// if we still get no match, that means that the class does not exist in this classpath
 		return nil, nil
@@ -110,13 +114,27 @@ func (cp *Classpath) OpenClass(name string) (*class.Class, error) {
 		Str("search", name).
 		Msg("found match")
 
-	jar, err := jar.Open(entry.Path)
-	if err != nil {
-		return nil, fmt.Errorf("open jar file: %w", err)
+	var jf *jar.File
+	var err error
+	if cache == nil {
+		jf, err = jar.Open(entry.Path)
+		if err != nil {
+			return nil, fmt.Errorf("open jar file: %w", err)
+		}
+		defer func() { _ = jf.Close() }()
+	} else {
+		var ok bool
+		jf, ok = cache.Get(entry.Path)
+		if !ok {
+			jf, err = jar.Open(entry.Path)
+			if err != nil {
+				return nil, fmt.Errorf("open jar file: %w", err)
+			}
+			cache.Add(entry.Path, jf)
+		}
 	}
-	defer func() { _ = jar.Close() }()
 
-	class, err := jar.OpenClass(name)
+	class, err := jf.OpenClass(name)
 	if err != nil {
 		return nil, fmt.Errorf("open class: %w", err)
 	}

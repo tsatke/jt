@@ -55,7 +55,7 @@ jobs:
 
       - name: Build
         run: |
-          go build -o jt ./cmd/jt
+          go build -ldflags '-s -w' -o jt ./cmd/jt
 
       - name: Archive artifacts
         uses: actions/upload-artifact@v2

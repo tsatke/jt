@@ -2,6 +2,7 @@ package jar
 
 import (
 	"archive/zip"
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -52,7 +53,10 @@ func (f *File) OpenClass(name string) (*class.Class, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open: %w", err)
 	}
-	class, err := class.ParseClass(classFile)
+	defer func() { _ = classFile.Close() }()
+
+	bufFile := bufio.NewReader(classFile)
+	class, err := class.ParseClass(bufFile)
 	if err != nil {
 		return nil, fmt.Errorf("parse class: %w", err)
 	}
