@@ -9,8 +9,7 @@
 
 ---
 
-`jt` is a java tool for the command line.
-It is meant to be the JDT in the terminal (I know that it still has to go a long way).
+`jt` is a java tool for the command line. Only works with the Java8 stdlib.
 
 ## Install
 
